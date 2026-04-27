@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sillans-la-Cascade</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #111;
+      display: flex; justify-content: center; align-items: flex-start;
+      overflow: hidden;
+    }
+    #appWrapper {
+      position: relative;
+      transform-origin: top left;
+    }
+    .app {
+      width: 402px;
+      height: 874px;
+      position: relative;
+      overflow: hidden;
+      background: white;
+    }
+    .screen {
+      position: absolute;
+      inset: 0;
+      width: 402px;
+      height: 874px;
+    }
+    .screen.hidden { display: none; }
+    img { display: block; max-width: none; }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+    /* Shared navbar */
+    .navbar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 90px;
+      background: #f0f5fc;
+      border-top: 1px solid #d9e0f2;
+      z-index: 50;
+    }
+    .nav-bar-indicator {
+      position: absolute;
+      width: 48px; height: 10px;
+      background: #1b5fa3;
+      border-radius: 5px;
+      bottom: 31px;
+    }
+    .nav-icon-mask {
+      width: 37px; height: 37px;
+      background-color: #1b5fa3;
+      -webkit-mask-size: 37px 37px;
+      -webkit-mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      mask-size: 37px 37px;
+      mask-repeat: no-repeat;
+      mask-position: center;
+    }
+    .nav-label {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 500;
+      font-size: 12px;
+      color: #1b5fa3;
+      white-space: nowrap;
+      position: absolute;
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes screenSlideUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.88); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes pulsePoi {
+      0%   { transform: translate(-50%,-50%) scale(1);   opacity: 0.55; }
+      70%  { transform: translate(-50%,-50%) scale(2.4); opacity: 0; }
+      100% { transform: translate(-50%,-50%) scale(2.4); opacity: 0; }
+    }
+    @keyframes poiDrop {
+      0%   { opacity: 0; transform: translateY(-18px) scale(0.65); }
+      65%  { transform: translateY(5px) scale(1.06); }
+      82%  { transform: translateY(-2px) scale(0.97); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes splashTitle {
+      from { opacity: 0; transform: translateY(30px) scale(0.95); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes splashBtn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .screen-enter { animation: screenSlideUp 0.38s cubic-bezier(0.22,1,0.36,1) both; }
+
+    /* POI Pin markers */
+    .poi-pin-wrap {
+      position: absolute;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 10;
+    }
+    .poi-pin-wrap:active { transform: scale(0.93); transition: transform 0.1s; }
+    .poi-pin-label {
+      position: absolute;
+      bottom: calc(100% + 7px);
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 10px;
+      padding: 5px 11px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-size: 11px;
+      color: #14141a;
+      pointer-events: none;
+    }
+    .poi-pin-label::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: rgba(255,255,255,0.96);
+    }
+    .poi-pin-circle {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 21px;
+      position: relative;
+      z-index: 2;
+    }
+    .poi-pin-tip {
+      width: 0; height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      position: relative;
+      z-index: 2;
+      margin-top: -1px;
+    }
+    .poi-pulse {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      animation: pulsePoi 2.2s ease-out infinite;
+      pointer-events: none;
+    }
+
+    /* POI content card */
+    .poi-card {
+      position: absolute;
+      left: 0;
+      width: 402px;
+      height: 490px;
+      background: white;
+      border-radius: 24px 24px 0 0;
+      overflow: hidden;
+      animation: screenSlideUp 0.45s cubic-bezier(0.22,1,0.36,1) 0.12s both;
+    }
+    .poi-handle {
+      position: absolute;
+      left: 171px; top: 14px;
+      width: 60px; height: 5px;
+      background: #ccccd9;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+<div id="appWrapper">
+  <div class="app" id="app">
+
+    <!-- ============================================================ -->
+    <!-- SPLASH                                                        -->
+    <!-- ============================================================ -->
+    <div class="screen" id="splash">
+      <img src="https://www.figma.com/api/mcp/asset/4965ebe1-5491-42ee-892c-4ae0dec8d49a"
+           style="position:absolute;inset:0;width:402px;height:874px;object-fit:cover;pointer-events:none">
+      <img src="https://www.figma.com/api/mcp/asset/2aec0ac3-2c1a-4924-bf2a-a1d8422687ca"
+           style="position:absolute;inset:0;width:402px;height:874px;object-fit:cover;pointer-events:none">
+
+      <!-- Title -->
+      <p style="position:absolute;top:430px;left:50%;transform:translateX(-50%);width:362px;font-family:'Inter',sans-serif;font-weight:700;font-size:34px;color:white;text-align:center;line-height:normal;animation:splashTitle 0.7s cubic-bezier(0.22,1,0.36,1) 0.2s both">Sillans-la-Cascade</p>
+
+      <!-- Subtitle -->
+      <p style="position:absolute;top:482px;left:50%;transform:translateX(-50%);width:362px;font-family:'Inter',sans-serif;font-weight:400;font-size:15px;color:#d9f2e5;text-align:center;line-height:normal;animation:splashTitle 0.7s cubic-bezier(0.22,1,0.36,1) 0.35s both">Découvrez la perle de la Provence Verte</p>
+
+      <!-- Decorative lines -->
+      <div style="position:absolute;top:472px;left:60px;width:60px;height:1px;background:rgba(255,255,255,0.4);animation:fadeInUp 0.6s ease 0.4s both"></div>
+      <div style="position:absolute;top:472px;left:282px;width:60px;height:1px;background:rgba(255,255,255,0.4);animation:fadeInUp 0.6s ease 0.4s both"></div>
+
+      <!-- Location badge -->
+      <div style="position:absolute;top:527px;left:148px;height:32px;background:rgba(255,255,255,0.15);border-radius:16px;padding:0 12px;display:flex;align-items:center;gap:6px;overflow:hidden;animation:splashBtn 0.6s ease 0.5s both">
+        <span style="font-size:12px;font-family:'Inter',sans-serif;color:black">📍</span>
+        <span style="font-family:'Inter',sans-serif;font-weight:500;font-size:12px;color:white">Var, France</span>
+      </div>
+
+      <!-- Carousel dots -->
+      <img src="https://www.figma.com/api/mcp/asset/e1fc3d9c-2c13-4205-8d65-105e7dd39111" style="position:absolute;top:714px;left:191px;width:8px;height:8px;animation:splashBtn 0.5s ease 0.65s both">
+      <img src="https://www.figma.com/api/mcp/asset/ca6306fc-43eb-43d5-8d8e-6a4f1ef136b2" style="position:absolute;top:714px;left:205px;width:8px;height:8px;animation:splashBtn 0.5s ease 0.7s both">
+      <img src="https://www.figma.com/api/mcp/asset/e1fc3d9c-2c13-4205-8d65-105e7dd39111" style="position:absolute;top:714px;left:219px;width:8px;height:8px;animation:splashBtn 0.5s ease 0.75s both">
+
+      <!-- CTA Button -->
+      <button onclick="go('accueil')" style="position:absolute;top:780px;left:61px;width:280px;height:58px;border-radius:29px;background:white;font-family:'Inter',sans-serif;font-weight:700;font-size:18px;color:#2e6b4f;cursor:pointer;overflow:hidden;animation:splashBtn 0.6s cubic-bezier(0.22,1,0.36,1) 0.8s both">
+        Découvrir →
+      </button>
+    </div>
+
+
+    <!-- ============================================================ -->
+    <!-- ACCUEIL                                                       -->
+    <!-- ============================================================ -->
+    <div class="screen hidden" id="accueil">
+      <!-- Bonjour -->
+      <p style="position:absolute;top:44px;left:23px;font-family:'Inter',sans-serif;font-weight:400;font-size:13px;color:#808080">Bonjour 👋</p>
+
+      <!-- Header: Accueil + Avatar -->
+      <div style="position:absolute;top:59px;left:50%;transform:translateX(-50%);width:349px;display:flex;align-items:flex-end;justify-content:space-between">
+        <p style="font-family:'Inter',sans-serif;font-weight:700;font-size:28px;color:#141414;white-space:nowrap">Accueil</p>
+        <div onclick="go('badges')" style="width:42px;height:42px;background:#669dcd;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;overflow:hidden">
+          <img src="https://www.figma.com/api/mcp/asset/7bf0a232-c3f2-411f-b277-8157f6979136" style="width:24px;height:24px">
+        </div>
+      </div>
+
+      <!-- Hero Card 1: Infos Pratiques -->
+      <div onclick="go('cascade')" style="position:absolute;top:110px;left:20px;width:176px;height:240px;border-radius:20px;overflow:hidden;cursor:pointer;animation:scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.08s both">
+        <img src="https://www.figma.com/api/mcp/asset/838c3476-f0d8-44db-8f83-865d24393b56" style="position:absolute;inset:0;width:176px;height:240px;object-fit:cover">
+        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(255,255,255,0.5) 0%,rgba(255,255,255,0) 40%)"></div>
+        <img src="https://www.figma.com/api/mcp/asset/f73b407f-0392-48eb-9690-d290ac797ff7" style="position:absolute;bottom:0;left:0;width:176px;height:80px;object-fit:cover">
+        <p style="position:absolute;bottom:44px;left:10px;width:156px;font-family:'Inter',sans-serif;font-weight:700;font-size:12px;color:white;line-height:normal">Infos Pratiques</p>
+        <p style="position:absolute;bottom:28px;left:10px;width:156px;font-family:'Inter',sans-serif;font-weight:400;font-size:10px;color:#c7f2d9;line-height:normal">Découvrir →</p>
+      </div>
+
+      <!-- Hero Card 2: Comment s'y rendre -->
+      <div onclick="go('carte')" style="position:absolute;top:110px;left:206px;width:176px;height:240px;border-radius:20px;overflow:hidden;cursor:pointer;animation:scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.18s both">
+        <img src="https://www.figma.com/api/mcp/asset/446f2d67-6661-4f88-b7f1-5cda860bbae7" style="position:absolute;inset:0;width:176px;height:240px;object-fit:cover">
+        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(255,255,255,0.5) 0%,rgba(255,255,255,0) 40%)"></div>
+        <img src="https://www.figma.com/api/mcp/asset/f73b407f-0392-48eb-9690-d290ac797ff7" style="position:absolute;bottom:0;left:0;width:176px;height:80px;object-fit:cover">
+        <p style="position:absolute;bottom:44px;left:10px;width:156px;font-family:'Inter',sans-serif;font-weight:700;font-size:12px;color:white;line-height:normal">Comment s'y rendre</p>
+        <p style="position:absolute;bottom:28px;left:10px;width:156px;font-family:'Inter',sans-serif;font-weight:400;font-size:10px;color:#c7f2d9;line-height:normal">Voir la carte →</p>
+      </div>
+
+      <!-- Tag Nature -->
+      <div style="position:absolute;top:382px;left:20px;width:100px;height:26px;background:#d9f2e0;border-radius:13px;overflow:hidden;display:flex;align-items:center;justify-content:center">
+        <p style="font-family:'Inter',sans-serif;font-weight:500;font-size:12px;color:#2e6b4f">🌿 Nature</p>
+      </div>
+
+      <!-- "À savoir" section -->
+      <p style="position:absolute;top:426px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:700;font-size:18px;color:#141414">À savoir avant votre visite</p>
+
+      <!-- Info card 1 -->
+      <div onclick="go('cascade')" style="position:absolute;top:466px;left:20px;width:362px;height:90px;background:#f7faf7;border-radius:16px;overflow:hidden;display:flex;align-items:center;gap:0;cursor:pointer;animation:fadeInUp 0.45s ease 0.28s both">
+        <div style="width:78px;height:78px;border-radius:10px;overflow:hidden;margin:0 0 0 0;flex-shrink:0">
+          <img src="https://www.figma.com/api/mcp/asset/446f2d67-6661-4f88-b7f1-5cda860bbae7" style="width:78px;height:90px;object-fit:cover">
+        </div>
+        <div style="margin-left:21px;margin-right:16px;display:flex;flex-direction:column;gap:5px">
+          <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:14px;color:#141414">La cascade de Sillans</p>
+          <p style="font-family:'Manrope',sans-serif;font-weight:500;font-size:12px;color:#808080;line-height:1.35">Haute de 42m, ses eaux turquoise sont une merveille naturelle.</p>
+        </div>
+      </div>
+
+      <!-- Info card 2 -->
+      <div onclick="go('carte')" style="position:absolute;top:573px;left:20px;width:362px;height:90px;background:#f7faf7;border-radius:16px;overflow:hidden;display:flex;align-items:center;cursor:pointer;animation:fadeInUp 0.45s ease 0.38s both">
+        <div style="width:78px;height:78px;border-radius:10px;overflow:hidden;flex-shrink:0">
+          <img src="https://www.figma.com/api/mcp/asset/446f2d67-6661-4f88-b7f1-5cda860bbae7" style="width:78px;height:90px;object-fit:cover">
+        </div>
+        <div style="margin-left:21px;margin-right:16px;display:flex;flex-direction:column;gap:5px">
+          <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:14px;color:#141414">Comment accéder à la cascade</p>
+          <p style="font-family:'Manrope',sans-serif;font-weight:500;font-size:12px;color:#808080;line-height:1.35">En voiture via la D560. Parking payant à l'entrée du village.</p>
+        </div>
+      </div>
+
+      <!-- Navbar: Accueil active -->
+      <div class="navbar">
+        <div class="nav-bar-indicator" style="left:83px"></div>
+        <div class="nav-icon-mask" style="position:absolute;left:88px;top:12px;-webkit-mask-image:url('https://www.figma.com/api/mcp/asset/ca5e9b43-f81c-4667-ae6e-900ea9e967e2');mask-image:url('https://www.figma.com/api/mcp/asset/ca5e9b43-f81c-4667-ae6e-900ea9e967e2')"></div>
+        <!-- Carte -->
+        <div onclick="go('carte')" style="position:absolute;left:162px;top:0;width:80px;height:80px;cursor:pointer">
+          <div class="nav-icon-mask" style="position:absolute;left:17px;top:12px;-webkit-mask-image:url('https://www.figma.com/api/mcp/asset/42f1604e-59c4-4777-90d5-3c5c87eb854e');mask-image:url('https://www.figma.com/api/mcp/asset/42f1604e-59c4-4777-90d5-3c5c87eb854e')"></div>
+          <p class="nav-label" style="bottom:12px;left:0;width:80px;text-align:center">Carte</p>
+        </div>
+        <!-- Plus d'idées -->
+        <div onclick="go('ideas')" style="position:absolute;left:240px;top:0;width:120px;height:80px;cursor:pointer">
+          <div class="nav-icon-mask" style="position:absolute;left:27px;top:12px;-webkit-mask-image:url('https://www.figma.com/api/mcp/asset/6446db22-0e1c-432c-8948-e5feb9326706');mask-image:url('https://www.figma.com/api/mcp/asset/6446db22-0e1c-432c-8948-e5feb9326706')"></div>
+          <p class="nav-label" style="bottom:12px;left:0;width:120px;text-align:center">Plus d'idées</p>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ============================================================ -->
+    <!-- CARTE INTERACTIVE                                             -->
+    <!-- ============================================================ -->
+    <div class="screen hidden" id="carte">
+      <!-- Map background -->
+      <img src="https://www.figma.com/api/mcp/asset/73e7970d-c4ad-428c-a793-ecc49a3904ab"
+           style="position:absolute;left:-92px;top:0;width:586px;height:727px;object-fit:cover;pointer-events:none">
+
+      <!-- Header background -->
+      <img src="https://www.figma.com/api/mcp/asset/af92c64b-2d1c-44d9-9a9c-76b1d3ca9cfb"
+           style="position:absolute;left:0;top:0;width:402px;height:108px;object-fit:cover;pointer-events:none">
+
+      <!-- Title -->
+      <p style="position:absolute;top:58px;left:20px;width:300px;font-family:'Inter',sans-serif;font-weight:700;font-size:22px;color:#14141a">Carte interactive</p>
+
+      <!-- Search bar -->
+      <div style="position:absolute;top:106px;left:20px;width:362px;height:42px;background:white;border-radius:21px;box-shadow:0 3px 10px rgba(0,0,0,0.1);display:flex;align-items:center;overflow:hidden">
+        <span style="margin-left:14px;font-family:'Inter',sans-serif;font-size:17px;color:#668ccc">⌕</span>
+        <span style="margin-left:4px;font-family:'Inter',sans-serif;font-size:13px;color:#9999b2">Chercher un lieu à Sillans...</span>
+      </div>
+
+      <!-- POI: Belvédère (red/orange) -->
+      <div class="poi-pin-wrap" onclick="go('poi-belvedere')" style="top:220px;left:171px;animation:poiDrop 0.5s cubic-bezier(0.22,1,0.36,1) 0.1s both">
+        <div class="poi-pulse" style="background:rgba(240,77,56,0.45)"></div>
+        <div class="poi-pin-label">Belvédère</div>
+        <div class="poi-pin-circle" style="background:linear-gradient(145deg,#ff6b52,#f04d38);box-shadow:0 6px 20px rgba(240,77,56,0.55)">🌅</div>
+        <div class="poi-pin-tip" style="border-top:10px solid #f04d38"></div>
+      </div>
+
+      <!-- POI: La Cascade (blue) -->
+      <div class="poi-pin-wrap" onclick="go('poi-bassin')" style="top:330px;left:191px;animation:poiDrop 0.5s cubic-bezier(0.22,1,0.36,1) 0.22s both">
+        <div class="poi-pulse" style="background:rgba(33,89,184,0.45)"></div>
+        <div class="poi-pin-label">La Cascade</div>
+        <div class="poi-pin-circle" style="background:linear-gradient(145deg,#3d74d4,#2159b8);box-shadow:0 6px 20px rgba(33,89,184,0.55)">🌊</div>
+        <div class="poi-pin-tip" style="border-top:10px solid #2159b8"></div>
+      </div>
+
+      <!-- POI: Le Moulin (green) -->
+      <div class="poi-pin-wrap" onclick="go('poi-moulin')" style="top:390px;left:96px;animation:poiDrop 0.5s cubic-bezier(0.22,1,0.36,1) 0.34s both">
+        <div class="poi-pulse" style="background:rgba(26,140,89,0.45)"></div>
+        <div class="poi-pin-label">Le Moulin</div>
+        <div class="poi-pin-circle" style="background:linear-gradient(145deg,#25b573,#1a8c59);box-shadow:0 6px 20px rgba(26,140,89,0.55)">⚙️</div>
+        <div class="poi-pin-tip" style="border-top:10px solid #1a8c59"></div>
+      </div>
+
+      <!-- POI: Village (purple) -->
+      <div class="poi-pin-wrap" onclick="go('poi-village')" style="top:268px;left:106px;animation:poiDrop 0.5s cubic-bezier(0.22,1,0.36,1) 0.46s both">
+        <div class="poi-pulse" style="background:rgba(140,64,191,0.45)"></div>
+        <div class="poi-pin-label">Village</div>
+        <div class="poi-pin-circle" style="background:linear-gradient(145deg,#a85fd4,#8c40bf);box-shadow:0 6px 20px rgba(140,64,191,0.55)">🏘️</div>
+        <div class="poi-pin-tip" style="border-top:10px solid #8c40bf"></div>
+      </div>
+
+      <!-- User location -->
+      <img src="https://www.figma.com/api/mcp/asset/32e80088-6219-49ec-a384-57fb518d398d" style="position:absolute;top:490px;left:290px;width:32px;height:32px">
+      <img src="https://www.figma.com/api/mcp/asset/5dc69a19-22d1-405a-944f-bd19568f2a03" style="position:absolute;top:499px;left:299px;width:14px;height:14px">
+      <div style="position:absolute;top:525px;left:262px;width:90px;height:22px;background:#2159b8;border-radius:11px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+        <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:10px;color:white">Ma position</p>
+      </div>
+
+      <!-- Legend card -->
+      <div style="position:absolute;top:635px;left:20px;width:362px;height:88px;background:white;border-radius:18px;box-shadow:0 -4px 20px rgba(0,0,0,0.1);overflow:hidden">
+        <p style="position:absolute;top:12px;left:14px;width:334px;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;color:#14141a">4 points d'intérêt à découvrir</p>
+        <p style="position:absolute;top:36px;left:14px;width:334px;font-family:'Inter',sans-serif;font-weight:400;font-size:11px;color:#808099">Approchez-vous d'un point pour voir les infos 📍</p>
+        <!-- Dots legend -->
+        <div style="position:absolute;top:62px;left:14px;width:10px;height:10px;background:#f04d38;border-radius:50%"></div>
+        <p style="position:absolute;top:63px;left:28px;font-family:'Inter',sans-serif;font-weight:500;font-size:9px;color:#444460">Belvédère</p>
+        <div style="position:absolute;top:62px;left:102px;width:10px;height:10px;background:#2159b8;border-radius:50%"></div>
+        <p style="position:absolute;top:63px;left:116px;font-family:'Inter',sans-serif;font-weight:500;font-size:9px;color:#444460">La Cascade</p>
+        <div style="position:absolute;top:62px;left:192px;width:10px;height:10px;background:#1a8c59;border-radius:50%"></div>
+        <p style="position:absolute;top:63px;left:206px;font-family:'Inter',sans-serif;font-weight:500;font-size:9px;color:#444460">Le Moulin</p>
+        <div style="position:absolute;top:62px;left:278px;width:10px;height:10px;background:#8c40bf;border-radius:50%"></div>
+        <p style="position:absolute;top:63px;left:292px;font-family:'Inter',sans-serif;font-weight:500;font-size:9px;color:#444460">Village</p>
+      </div>
+
+      <!-- Navbar: Carte active -->
+      <div class="navbar">
+        <div class="nav-bar-indicator" style="left:175px"></div>
+        <!-- Accueil -->
+        <div onclick="go('accueil')" style="position:absolute;left:68px;top:0;width:80px;height:80px;cursor:pointer">
+          <div class="nav-icon-mask" style="position:absolute;left:4px;top:12px;-webkit-mask-image:url('https://www.figma.com/api/mcp/asset/ca5e9b43-f81c-4667-ae6e-900ea9e967e2');mask-image:url('https://www.figma.com/api/mcp/asset/ca5e9b43-f81c-4667-ae6e-900ea9e967e2')"></div>
+          <p class="nav-label" style="bottom:12px;left:0;width:80px;text-align:center">Accueil</p>
+        </div>
+        <!-- Carte (active icon) -->
+        <div class="nav-icon-mask" style="position:absolute;left:180px;top:12px;-webkit-mask-image:url('https://www.figma.com/api/mcp/asset/42f1604e-59c4-4777-90d5-3c5c87eb854e');mask-image:url('https://www.figma.com/api/mcp/asset/42f1604e-59c4-4777-90d5-3c5c87eb854e')"></div>
+        <!-- Plus d'idées -->
+        <div onclick="go('ideas')" style="position:absolute;left:240px;top:0;width:120px;height:80px;cursor:pointer">
+          <div class="nav-icon-mask" style="position:absolute;left:27px;top:12px;-webkit-mask-image:url('https://www.figma.com/api/mcp/asset/6446db22-0e1c-432c-8948-e5feb9326706');mask-image:url('https://www.figma.com/api/mcp/asset/6446db22-0e1c-432c-8948-e5feb9326706')"></div>
+          <p class="nav-label" style="bottom:12px;left:0;width:120px;text-align:center">Plus d'idées</p>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ============================================================ -->
+    <!-- CASCADE DETAIL                                                -->
+    <!-- ============================================================ -->
+    <div class="screen hidden" id="cascade">
+      <!-- Hero image -->
+      <img src="https://www.figma.com/api/mcp/asset/7f7efa4a-8088-41ff-8ba4-4f3cb2a13a70"
+           style="position:absolute;top:0;left:0;width:402px;height:280px;object-fit:cover;pointer-events:none">
+      <img src="https://www.figma.com/api/mcp/asset/d142d006-bd26-4dbf-9b87-808d0621793c"
+           style="position:absolute;top:0;left:0;width:402px;height:280px;object-fit:cover;pointer-events:none">
+
+      <!-- Back button -->
+      <button onclick="go('accueil')" style="position:absolute;top:52px;left:16px;width:36px;height:36px;background:rgba(255,255,255,0.9);border-radius:18px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-weight:700;font-size:24px;color:#2e6b4f">‹</button>
+
+      <!-- Fav button -->
+      <button style="position:absolute;top:52px;left:350px;width:36px;height:36px;background:rgba(255,255,255,0.9);border-radius:18px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:16px;color:#2e6b4f">♡</button>
+
+      <!-- Title over hero -->
+      <p style="position:absolute;top:210px;left:20px;width:300px;font-family:'Inter',sans-serif;font-weight:700;font-size:26px;color:white;line-height:normal">Cascade de Sillans</p>
+      <p style="position:absolute;top:250px;left:20px;width:300px;font-family:'Inter',sans-serif;font-weight:400;font-size:12px;color:#e6e6e6">📍 Sillans-la-Cascade, Var, France</p>
+
+      <!-- Stats row -->
+      <div style="position:absolute;top:288px;left:20px;width:362px;height:72px;background:#f7faf7;border-radius:16px;overflow:hidden;display:flex;align-items:center;justify-content:center;animation:fadeInUp 0.4s ease 0.1s both">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:120px">
+          <p style="font-family:'Inter',sans-serif;font-weight:700;font-size:18px;color:#2e6b4f">42m</p>
+          <p style="font-family:'Inter',sans-serif;font-weight:400;font-size:11px;color:#808080">Hauteur</p>
+        </div>
+        <div style="width:1px;height:40px;background:#ccc"></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:120px">
+          <p style="font-family:'Inter',sans-serif;font-weight:700;font-size:18px;color:#2e6b4f">2.5km</p>
+          <p style="font-family:'Inter',sans-serif;font-weight:400;font-size:11px;color:#808080">Distance</p>
+        </div>
+        <div style="width:1px;height:40px;background:#ccc"></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:120px">
+          <p style="font-family:'Inter',sans-serif;font-weight:700;font-size:18px;color:#2e6b4f">1h30</p>
+          <p style="font-family:'Inter',sans-serif;font-weight:400;font-size:11px;color:#808080">Durée</p>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <p style="position:absolute;top:376px;left:20px;width:340px;font-family:'Inter',sans-serif;font-weight:700;font-size:17px;color:#1a1a1a">Description</p>
+      <p style="position:absolute;top:404px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:400;font-size:13px;color:#666;line-height:1.5">La cascade de Sillans est l'une des plus belles de Provence. Haute de 42m, elle tombe dans un bassin aux eaux turquoise entouré de falaises calcaires.</p>
+
+      <!-- Informations pratiques -->
+      <p style="position:absolute;top:486px;left:20px;width:340px;font-family:'Inter',sans-serif;font-weight:700;font-size:17px;color:#1a1a1a">Informations pratiques</p>
+
+      <!-- Card Horaires -->
+      <div style="position:absolute;top:518px;left:20px;width:362px;height:62px;background:#f7faf7;border-radius:14px;overflow:hidden">
+        <span style="position:absolute;top:21px;left:16px;font-size:20px">🕐</span>
+        <p style="position:absolute;top:12px;left:58px;width:290px;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;color:#1a1a1a">Horaires</p>
+        <p style="position:absolute;top:34px;left:58px;width:290px;font-family:'Inter',sans-serif;font-weight:400;font-size:12px;color:#808080">Ouvert toute l'année — Accès libre</p>
+      </div>
+
+      <!-- Card Tarif -->
+      <div style="position:absolute;top:590px;left:20px;width:362px;height:62px;background:#f7faf7;border-radius:14px;overflow:hidden">
+        <span style="position:absolute;top:21px;left:16px;font-size:20px">🎟</span>
+        <p style="position:absolute;top:12px;left:58px;width:290px;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;color:#1a1a1a">Tarif</p>
+        <p style="position:absolute;top:34px;left:58px;width:290px;font-family:'Inter',sans-serif;font-weight:400;font-size:12px;color:#808080">Gratuit — Parking payant à proximité</p>
+      </div>
+
+      <!-- Card Accès -->
+      <div style="position:absolute;top:662px;left:20px;width:362px;height:62px;background:#f7faf7;border-radius:14px;overflow:hidden">
+        <span style="position:absolute;top:21px;left:16px;font-size:20px">🚗</span>
+        <p style="position:absolute;top:12px;left:58px;width:290px;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;color:#1a1a1a">Accès</p>
+        <p style="position:absolute;top:34px;left:58px;width:290px;font-family:'Inter',sans-serif;font-weight:400;font-size:12px;color:#808080">D560, 83690 Sillans-la-Cascade</p>
+      </div>
+
+      <!-- Voir les photos CTA -->
+      <button style="position:absolute;top:736px;left:20px;width:362px;height:46px;background:#2e6b4f;border-radius:23px;overflow:hidden;font-family:'Inter',sans-serif;font-weight:600;font-size:14px;color:white">
+        🖼  Voir les photos
+      </button>
+
+      <!-- Navbar: Accueil active -->
+      <div class="navbar">
+        <div class="nav-bar-indicator" style="left:83px"></div>
+        <div class="nav-icon-mask" style="position:absolute;left:88px;top:12px;-webkit-mask-image:url('https://www.figma.com/api/mcp/asset/ca5e9b43-f81c-4667-ae6e-900ea9e967e2');mask-image:url('https://www.figma.com/api/mcp/asset/ca5e9b43-f81c-4667-ae6e-900ea9e967e2')"></div>
+        <div onclick="go('carte')" style="position:absolute;left:162px;top:0;width:80px;height:80px;cursor:pointer">
+          <div class="nav-icon-mask" style="position:absolute;left:17px;top:12px;-webkit-mask-image:url('https://www.figma.com/api/mcp/asset/42f1604e-59c4-4777-90d5-3c5c87eb854e');mask-image:url('https://www.figma.com/api/mcp/asset/42f1604e-59c4-4777-90d5-3c5c87eb854e')"></div>
+          <p class="nav-label" style="bottom:12px;left:0;width:80px;text-align:center">Carte</p>
+        </div>
+        <div onclick="go('ideas')" style="position:absolute;left:240px;top:0;width:120px;height:80px;cursor:pointer">
+          <div class="nav-icon-mask" style="position:absolute;left:27px;top:12px;-webkit-mask-image:url('https://www.figma.com/api/mcp/asset/6446db22-0e1c-432c-8948-e5feb9326706');mask-image:url('https://www.figma.com/api/mcp/asset/6446db22-0e1c-432c-8948-e5feb9326706')"></div>
+          <p class="nav-label" style="bottom:12px;left:0;width:120px;text-align:center">Plus d'idées</p>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ============================================================ -->
+    <!-- POI: BELVÉDÈRE                                               -->
+    <!-- ============================================================ -->
+    <div class="screen hidden" id="poi-belvedere">
+      <!-- Map bg with dark overlay -->
+      <img src="https://www.figma.com/api/mcp/asset/04f98ef4-4ad6-48e2-bae3-8e5f20e70cd9"
+           style="position:absolute;left:-92px;top:0;width:586px;height:420px;object-fit:cover;pointer-events:none">
+      <div style="position:absolute;top:0;left:0;width:402px;height:420px;background:rgba(0,0,0,0.35)"></div>
+
+      <!-- POI marker -->
+      <div style="position:absolute;top:175px;left:136px;width:130px;height:38px;background:#f04d38;border-radius:19px;overflow:hidden;display:flex;align-items:center">
+        <span style="margin-left:10px;font-size:16px">🌅</span>
+        <p style="margin-left:4px;font-family:'Inter',sans-serif;font-weight:700;font-size:11px;color:white">Belvédère de</p>
+      </div>
+
+      <!-- User position -->
+      <img src="https://www.figma.com/api/mcp/asset/82d81c87-43df-4dec-88b2-f203f64acaa0" style="position:absolute;top:225px;left:185px;width:28px;height:28px">
+      <img src="https://www.figma.com/api/mcp/asset/0d31fd15-c948-4e7e-8838-93079003ab13" style="position:absolute;top:233px;left:193px;width:12px;height:12px">
+
+      <!-- "Vous êtes ici" banner -->
+      <div style="position:absolute;top:270px;left:121px;width:160px;height:32px;background:white;border-radius:16px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+        <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:11px;color:#f04d38">📍 Vous êtes ici !</p>
+      </div>
+
+      <!-- Close button -->
+      <button onclick="go('carte')" style="position:absolute;top:52px;left:16px;width:36px;height:36px;background:rgba(255,255,255,0.9);border-radius:18px;font-family:'Inter',sans-serif;font-weight:700;font-size:14px;color:#33334d">✕</button>
+
+      <!-- Content card -->
+      <div class="poi-card" style="top:384px">
+        <div class="poi-handle"></div>
+
+        <!-- Category tag -->
+        <div style="position:absolute;top:36px;left:20px;width:80px;height:24px;background:rgba(240,77,56,0.12);border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:10px;color:#f04d38">Panorama</p>
+        </div>
+
+        <p style="position:absolute;top:68px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:700;font-size:22px;color:#14141a">Belvédère de la Cascade</p>
+        <p style="position:absolute;top:106px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:400;font-size:12px;color:#808099">📍 Vue panoramique · 5 min à pied</p>
+
+        <!-- Image -->
+        <div style="position:absolute;top:136px;left:20px;width:362px;height:130px;border-radius:16px;overflow:hidden">
+          <img src="https://www.figma.com/api/mcp/asset/cec73454-9090-4f0c-a3c9-e3d873143fc0" style="width:362px;height:130px;object-fit:cover">
+          <div style="position:absolute;top:0;right:0;bottom:0;left:0;display:flex;align-items:flex-end;justify-content:flex-end;padding:8px">
+            <div style="background:rgba(0,0,0,0.55);border-radius:13px;padding:4px 10px">
+              <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:10px;color:white">📸 Photo</p>
+            </div>
+          </div>
+        </div>
+
+        <p style="position:absolute;top:280px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:400;font-size:12px;color:#595973;line-height:1.5">Depuis ce belvédère aménagé, profitez d'une vue plongeante sur la cascade de Sillans et son bassin turquoise. Le meilleur spot photo de la région !</p>
+
+        <!-- Badge unlock -->
+        <div style="position:absolute;top:364px;left:20px;width:362px;height:44px;background:rgba(240,77,56,0.1);border-radius:14px;display:flex;align-items:center;overflow:hidden">
+          <p style="margin-left:14px;font-family:'Inter',sans-serif;font-weight:600;font-size:12px;color:#f04d38">🏅 Badge débloqué : 👁️ Vue imprenable</p>
+        </div>
+
+        <!-- Back to map -->
+        <button onclick="go('carte')" style="position:absolute;top:424px;left:20px;width:362px;height:46px;background:#f04d38;border-radius:23px;overflow:hidden;font-family:'Inter',sans-serif;font-weight:600;font-size:14px;color:white">
+          ← Retour à la carte
+        </button>
+      </div>
+
+      <!-- Navbar divider -->
+      <div style="position:absolute;top:784px;left:0;width:402px;height:1px;background:#d9e0f2;z-index:51"></div>
+    </div>
+
+
+    <!-- ============================================================ -->
+    <!-- POI: BASSIN DE LA CASCADE                                     -->
+    <!-- ============================================================ -->
+    <div class="screen hidden" id="poi-bassin">
+      <img src="https://www.figma.com/api/mcp/asset/b28ed944-ca3f-4429-b2b0-5500942fdfe7"
+           style="position:absolute;left:-92px;top:0;width:586px;height:420px;object-fit:cover;pointer-events:none">
+      <div style="position:absolute;top:0;left:0;width:402px;height:420px;background:rgba(0,0,0,0.35)"></div>
+
+      <div style="position:absolute;top:175px;left:136px;width:130px;height:38px;background:#2159b8;border-radius:19px;overflow:hidden;display:flex;align-items:center">
+        <span style="margin-left:10px;font-size:16px">🌊</span>
+        <p style="margin-left:4px;font-family:'Inter',sans-serif;font-weight:700;font-size:11px;color:white">Bassin de</p>
+      </div>
+
+      <img src="https://www.figma.com/api/mcp/asset/a4a6323a-84ed-426f-ab20-47020e3957a1" style="position:absolute;top:225px;left:185px;width:28px;height:28px">
+      <img src="https://www.figma.com/api/mcp/asset/b82e01a0-fdcd-45e1-8922-bee42559067c" style="position:absolute;top:233px;left:193px;width:12px;height:12px">
+
+      <div style="position:absolute;top:270px;left:121px;width:160px;height:32px;background:white;border-radius:16px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+        <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:11px;color:#2159b8">📍 Vous êtes ici !</p>
+      </div>
+
+      <button onclick="go('carte')" style="position:absolute;top:52px;left:16px;width:36px;height:36px;background:rgba(255,255,255,0.9);border-radius:18px;font-family:'Inter',sans-serif;font-weight:700;font-size:14px;color:#33334d">✕</button>
+
+      <div class="poi-card" style="top:384px">
+        <div class="poi-handle"></div>
+        <div style="position:absolute;top:36px;left:20px;width:80px;height:24px;background:rgba(33,89,184,0.12);border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:10px;color:#2159b8">Nature</p>
+        </div>
+        <p style="position:absolute;top:68px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:700;font-size:22px;color:#14141a">Bassin de la Cascade</p>
+        <p style="position:absolute;top:106px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:400;font-size:12px;color:#808099">📍 Baignade · Accès direct</p>
+        <div style="position:absolute;top:136px;left:20px;width:362px;height:130px;border-radius:16px;overflow:hidden">
+          <img src="https://www.figma.com/api/mcp/asset/7d6db0a5-5a85-4d8a-8dd4-119e29bcb428" style="width:362px;height:130px;object-fit:cover">
+          <div style="position:absolute;top:0;right:0;bottom:0;left:0;display:flex;align-items:flex-end;justify-content:flex-end;padding:8px">
+            <div style="background:rgba(0,0,0,0.55);border-radius:13px;padding:4px 10px">
+              <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:10px;color:white">▶ Vidéo</p>
+            </div>
+          </div>
+        </div>
+        <p style="position:absolute;top:280px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:400;font-size:12px;color:#595973;line-height:1.5">Le bassin naturel de la cascade offre des eaux d'un bleu turquoise spectaculaire. La baignade est possible selon la météo. Accès par sentier fléché depuis le parking.</p>
+        <div style="position:absolute;top:364px;left:20px;width:362px;height:44px;background:rgba(33,89,184,0.1);border-radius:14px;display:flex;align-items:center;overflow:hidden">
+          <p style="margin-left:14px;font-family:'Inter',sans-serif;font-weight:600;font-size:12px;color:#2159b8">🏅 Badge débloqué : 🌊 Plongeur</p>
+        </div>
+        <button onclick="go('carte')" style="position:absolute;top:424px;left:20px;width:362px;height:46px;background:#2159b8;border-radius:23px;font-family:'Inter',sans-serif;font-weight:600;font-size:14px;color:white">
+          ← Retour à la carte
+        </button>
+      </div>
+      <div style="position:absolute;top:784px;left:0;width:402px;height:1px;background:#d9e0f2;z-index:51"></div>
+    </div>
+
+
+    <!-- ============================================================ -->
+    <!-- POI: MOULIN MÉDIÉVAL                                         -->
+    <!-- ============================================================ -->
+    <div class="screen hidden" id="poi-moulin">
+      <img src="https://www.figma.com/api/mcp/asset/0da23630-9db4-43da-8e4d-33a047a950ad"
+           style="position:absolute;left:-92px;top:0;width:586px;height:420px;object-fit:cover;pointer-events:none">
+      <div style="position:absolute;top:0;left:0;width:402px;height:420px;background:rgba(0,0,0,0.35)"></div>
+
+      <div style="position:absolute;top:175px;left:136px;width:130px;height:38px;background:#1a8c59;border-radius:19px;overflow:hidden;display:flex;align-items:center">
+        <span style="margin-left:10px;font-size:14px">⚙️</span>
+        <p style="margin-left:4px;font-family:'Inter',sans-serif;font-weight:700;font-size:11px;color:white">Moulin médiéval</p>
+      </div>
+
+      <img src="https://www.figma.com/api/mcp/asset/7c81ee49-8bb3-4dd9-932c-692d1e30b5bf" style="position:absolute;top:225px;left:185px;width:28px;height:28px">
+      <img src="https://www.figma.com/api/mcp/asset/05c03560-2417-496e-a871-40812be3f3d6" style="position:absolute;top:233px;left:193px;width:12px;height:12px">
+
+      <div style="position:absolute;top:270px;left:121px;width:160px;height:32px;background:white;border-radius:16px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+        <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:11px;color:#1a8c59">📍 Vous êtes ici !</p>
+      </div>
+
+      <button onclick="go('carte')" style="position:absolute;top:52px;left:16px;width:36px;height:36px;background:rgba(255,255,255,0.9);border-radius:18px;font-family:'Inter',sans-serif;font-weight:700;font-size:14px;color:#33334d">✕</button>
+
+      <div class="poi-card" style="top:384px">
+        <div class="poi-handle"></div>
+        <div style="position:absolute;top:36px;left:20px;width:80px;height:24px;background:rgba(26,140,89,0.12);border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:10px;color:#1a8c59">Histoire</p>
+        </div>
+        <p style="position:absolute;top:68px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:700;font-size:22px;color:#14141a">Moulin médiéval</p>
+        <p style="position:absolute;top:106px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:400;font-size:12px;color:#808099">📍 Patrimoine · XIIe siècle</p>
+        <div style="position:absolute;top:136px;left:20px;width:362px;height:130px;border-radius:16px;overflow:hidden">
+          <img src="https://www.figma.com/api/mcp/asset/716e7f17-797c-4846-98a4-0bc1463d5069" style="width:362px;height:130px;object-fit:cover">
+          <div style="position:absolute;top:0;right:0;bottom:0;left:0;display:flex;align-items:flex-end;justify-content:flex-end;padding:8px">
+            <div style="background:rgba(0,0,0,0.55);border-radius:13px;padding:4px 10px">
+              <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:10px;color:white">📸 Photo</p>
+            </div>
+          </div>
+        </div>
+        <p style="position:absolute;top:280px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:400;font-size:12px;color:#595973;line-height:1.5">Ce moulin à eau datant du XIIe siècle témoigne de l'histoire industrielle du village. Restauré en 2018, il accueille des expositions temporaires sur l'artisanat provençal.</p>
+        <div style="position:absolute;top:364px;left:20px;width:362px;height:44px;background:rgba(26,140,89,0.1);border-radius:14px;display:flex;align-items:center;overflow:hidden">
+          <p style="margin-left:14px;font-family:'Inter',sans-serif;font-weight:600;font-size:12px;color:#1a8c59">🏅 Badge débloqué : ⚙️ Historien</p>
+        </div>
+        <button onclick="go('carte')" style="position:absolute;top:424px;left:20px;width:362px;height:46px;background:#1a8c59;border-radius:23px;font-family:'Inter',sans-serif;font-weight:600;font-size:14px;color:white">
+          ← Retour à la carte
+        </button>
+      </div>
+      <div style="position:absolute;top:784px;left:0;width:402px;height:1px;background:#d9e0f2;z-index:51"></div>
+    </div>
+
+
+    <!-- ============================================================ -->
+    <!-- POI: CENTRE DU VILLAGE                                        -->
+    <!-- ============================================================ -->
+    <div class="screen hidden" id="poi-village">
+      <img src="https://www.figma.com/api/mcp/asset/09aa27a6-8c8e-4b9c-92a8-defc04b32554"
+           style="position:absolute;left:-92px;top:0;width:586px;height:420px;object-fit:cover;pointer-events:none">
+      <div style="position:absolute;top:0;left:0;width:402px;height:420px;background:rgba(0,0,0,0.35)"></div>
+
+      <div style="position:absolute;top:175px;left:136px;width:130px;height:38px;background:#8c40bf;border-radius:19px;overflow:hidden;display:flex;align-items:center">
+        <span style="margin-left:10px;font-size:14px">🏘️</span>
+        <p style="margin-left:4px;font-family:'Inter',sans-serif;font-weight:700;font-size:11px;color:white">Centre du</p>
+      </div>
+
+      <img src="https://www.figma.com/api/mcp/asset/aa707b3f-259e-4e2e-802c-4bef4f3d8e35" style="position:absolute;top:225px;left:185px;width:28px;height:28px">
+      <img src="https://www.figma.com/api/mcp/asset/4d057514-f72f-4307-bcfa-42ea3460a63a" style="position:absolute;top:233px;left:193px;width:12px;height:12px">
+
+      <div style="position:absolute;top:270px;left:121px;width:160px;height:32px;background:white;border-radius:16px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+        <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:11px;color:#8c40bf">📍 Vous êtes ici !</p>
+      </div>
+
+      <button onclick="go('carte')" style="position:absolute;top:52px;left:16px;width:36px;height:36px;background:rgba(255,255,255,0.9);border-radius:18px;font-family:'Inter',sans-serif;font-weight:700;font-size:14px;color:#33334d">✕</button>
+
+      <div class="poi-card" style="top:384px">
+        <div class="poi-handle"></div>
+        <div style="position:absolute;top:36px;left:20px;width:80px;height:24px;background:rgba(140,64,191,0.12);border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:10px;color:#8c40bf">Village</p>
+        </div>
+        <p style="position:absolute;top:68px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:700;font-size:22px;color:#14141a">Centre du village</p>
+        <p style="position:absolute;top:106px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:400;font-size:12px;color:#808099">📍 Village médiéval · Place centrale</p>
+        <div style="position:absolute;top:136px;left:20px;width:362px;height:130px;border-radius:16px;overflow:hidden">
+          <img src="https://www.figma.com/api/mcp/asset/4ec9270f-a09c-46ec-ae2f-15ae3b0fb51e" style="width:362px;height:130px;object-fit:cover">
+          <div style="position:absolute;top:0;right:0;bottom:0;left:0;display:flex;align-items:flex-end;justify-content:flex-end;padding:8px">
+            <div style="background:rgba(0,0,0,0.55);border-radius:13px;padding:4px 10px">
+              <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:10px;color:white">🔊 Audio</p>
+            </div>
+          </div>
+        </div>
+        <p style="position:absolute;top:280px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:400;font-size:12px;color:#595973;line-height:1.5">Le cœur historique de Sillans-la-Cascade, classé parmi les plus beaux villages de Provence. Admirez les ruelles pavées, la fontaine du XVIIIe siècle et l'église romane.</p>
+        <div style="position:absolute;top:364px;left:20px;width:362px;height:44px;background:rgba(140,64,191,0.1);border-radius:14px;display:flex;align-items:center;overflow:hidden">
+          <p style="margin-left:14px;font-family:'Inter',sans-serif;font-weight:600;font-size:12px;color:#8c40bf">🏅 Badge débloqué : 🏘️ Locavore</p>
+        </div>
+        <button onclick="go('carte')" style="position:absolute;top:424px;left:20px;width:362px;height:46px;background:#8c40bf;border-radius:23px;font-family:'Inter',sans-serif;font-weight:600;font-size:14px;color:white">
+          ← Retour à la carte
+        </button>
+      </div>
+      <div style="position:absolute;top:784px;left:0;width:402px;height:1px;background:#d9e0f2;z-index:51"></div>
+    </div>
+
+
+    <!-- ============================================================ -->
+    <!-- PLUS D'IDÉES                                                  -->
+    <!-- ============================================================ -->
+    <div class="screen hidden" id="ideas">
+      <!-- White header -->
+      <div style="position:absolute;top:0;left:0;width:402px;height:110px;background:white"></div>
+
+      <p style="position:absolute;top:35px;left:20px;width:300px;font-family:'Inter',sans-serif;font-weight:400;font-size:13px;color:#8080a6">Explorez Sillans-la-Cascade</p>
+      <p style="position:absolute;top:60px;left:20px;width:300px;font-family:'Inter',sans-serif;font-weight:700;font-size:26px;color:#14141a">Plus d'idées</p>
+
+      <!-- Background -->
+      <div style="position:absolute;top:110px;left:0;width:402px;height:674px;background:#f7faff"></div>
+
+      <!-- Visites section -->
+      <p style="position:absolute;top:126px;left:20px;width:340px;font-family:'Inter',sans-serif;font-weight:700;font-size:17px;color:#14141a">🏛 Visites du village</p>
+
+      <!-- Visit card 1 -->
+      <div onclick="go('village-detail')" style="position:absolute;top:162px;left:20px;width:362px;height:100px;background:white;border-radius:18px;box-shadow:0 4px 16px rgba(0,13,51,0.07);overflow:hidden;cursor:pointer">
+        <div style="position:absolute;top:0;left:0;width:90px;height:100px;overflow:hidden">
+          <img src="https://www.figma.com/api/mcp/asset/523745d5-caf5-435d-ac30-087e6c2f46d6" style="width:90px;height:100px;object-fit:cover">
+        </div>
+        <div style="position:absolute;top:0;left:60px;width:30px;height:100px;background:linear-gradient(to right,rgba(255,255,255,0),white)"></div>
+        <div style="position:absolute;top:14px;left:100px;width:72px;height:20px;background:rgba(33,89,184,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:9px;color:#2159b8">Guidé</p>
+        </div>
+        <p style="position:absolute;top:40px;left:100px;width:242px;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;color:#14141a;line-height:1.3">Visite guidée du vieux village</p>
+        <p style="position:absolute;top:78px;left:100px;width:242px;font-family:'Inter',sans-serif;font-weight:400;font-size:10px;color:#8080a6">2h · Tous niveaux · Départ mairie</p>
+        <p style="position:absolute;top:38px;left:336px;font-family:'Inter',sans-serif;font-weight:700;font-size:22px;color:#2159b8">›</p>
+      </div>
+
+      <!-- Visit card 2 -->
+      <div style="position:absolute;top:278px;left:20px;width:362px;height:100px;background:white;border-radius:18px;box-shadow:0 4px 16px rgba(0,13,51,0.07);overflow:hidden;cursor:pointer">
+        <div style="position:absolute;top:0;left:0;width:90px;height:100px;overflow:hidden">
+          <img src="https://www.figma.com/api/mcp/asset/53497bd9-9be3-450a-be86-581812da66a3" style="width:90px;height:100px;object-fit:cover">
+        </div>
+        <div style="position:absolute;top:0;left:60px;width:30px;height:100px;background:linear-gradient(to right,rgba(255,255,255,0),white)"></div>
+        <div style="position:absolute;top:14px;left:100px;width:72px;height:20px;background:rgba(26,140,89,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:9px;color:#1a8c59">Balade</p>
+        </div>
+        <p style="position:absolute;top:40px;left:100px;width:242px;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;color:#14141a;line-height:1.3">Circuit des lavoirs provençaux</p>
+        <p style="position:absolute;top:78px;left:100px;width:242px;font-family:'Inter',sans-serif;font-weight:400;font-size:10px;color:#8080a6">1h30 · Facile · Boucle 3km</p>
+        <p style="position:absolute;top:38px;left:336px;font-family:'Inter',sans-serif;font-weight:700;font-size:22px;color:#2159b8">›</p>
+      </div>
+
+      <!-- Visit card 3 -->
+      <div style="position:absolute;top:394px;left:20px;width:362px;height:100px;background:white;border-radius:18px;box-shadow:0 4px 16px rgba(0,13,51,0.07);overflow:hidden;cursor:pointer">
+        <div style="position:absolute;top:0;left:0;width:90px;height:100px;overflow:hidden">
+          <img src="https://www.figma.com/api/mcp/asset/3899d11e-c887-422d-a4c8-96cc5105f675" style="width:90px;height:100px;object-fit:cover">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px">→</div>
+        </div>
+        <div style="position:absolute;top:0;left:60px;width:30px;height:100px;background:linear-gradient(to right,rgba(255,255,255,0),white)"></div>
+        <div style="position:absolute;top:14px;left:100px;width:72px;height:20px;background:rgba(166,97,31,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:9px;color:#a6611f">Patrimoine</p>
+        </div>
+        <p style="position:absolute;top:40px;left:100px;width:242px;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;color:#14141a;line-height:1.3">Découverte du moulin médiéval</p>
+        <p style="position:absolute;top:78px;left:100px;width:242px;font-family:'Inter',sans-serif;font-weight:400;font-size:10px;color:#8080a6">45 min · Libre · XIIe siècle</p>
+        <p style="position:absolute;top:38px;left:336px;font-family:'Inter',sans-serif;font-weight:700;font-size:22px;color:#2159b8">›</p>
+      </div>
+
+      <!-- Activities section -->
+      <p style="position:absolute;top:520px;left:20px;width:340px;font-family:'Inter',sans-serif;font-weight:700;font-size:17px;color:#14141a">🎯 Activités &amp; missions</p>
+
+      <!-- Activity pills -->
+      <div style="position:absolute;top:558px;left:20px;display:flex;gap:8px;overflow:hidden">
+        <div style="height:32px;background:white;border-radius:16px;box-shadow:0 2px 8px rgba(0,13,51,0.07);padding:0 12px;display:flex;align-items:center;white-space:nowrap">
+          <p style="font-family:'Inter',sans-serif;font-weight:500;font-size:11px;color:#2159b8">🏊 Baignade</p>
+        </div>
+        <div style="height:32px;background:white;border-radius:16px;box-shadow:0 2px 8px rgba(0,13,51,0.07);padding:0 12px;display:flex;align-items:center;white-space:nowrap">
+          <p style="font-family:'Inter',sans-serif;font-weight:500;font-size:11px;color:#2159b8">🚵 VTT</p>
+        </div>
+        <div style="height:32px;background:white;border-radius:16px;box-shadow:0 2px 8px rgba(0,13,51,0.07);padding:0 12px;display:flex;align-items:center;white-space:nowrap">
+          <p style="font-family:'Inter',sans-serif;font-weight:500;font-size:11px;color:#2159b8">📷 Photo</p>
+        </div>
+        <div style="height:32px;background:white;border-radius:16px;box-shadow:0 2px 8px rgba(0,13,51,0.07);padding:0 12px;display:flex;align-items:center;white-space:nowrap">
+          <p style="font-family:'Inter',sans-serif;font-weight:500;font-size:11px;color:#2159b8">🍕 Gastro</p>
+        </div>
+      </div>
+
+      <!-- Navbar: Plus d'idées active -->
+      <div class="navbar">
+        <div class="nav-bar-indicator" style="left:260px"></div>
+        <div onclick="go('accueil')" style="position:absolute;left:68px;top:0;width:80px;height:80px;cursor:pointer">
+          <div class="nav-icon-mask" style="position:absolute;left:4px;top:12px;-webkit-mask-image:url('https://www.figma.com/api/mcp/asset/ca5e9b43-f81c-4667-ae6e-900ea9e967e2');mask-image:url('https://www.figma.com/api/mcp/asset/ca5e9b43-f81c-4667-ae6e-900ea9e967e2')"></div>
+          <p class="nav-label" style="bottom:12px;left:0;width:80px;text-align:center">Accueil</p>
+        </div>
+        <div onclick="go('carte')" style="position:absolute;left:162px;top:0;width:80px;height:80px;cursor:pointer">
+          <div class="nav-icon-mask" style="position:absolute;left:17px;top:12px;-webkit-mask-image:url('https://www.figma.com/api/mcp/asset/42f1604e-59c4-4777-90d5-3c5c87eb854e');mask-image:url('https://www.figma.com/api/mcp/asset/42f1604e-59c4-4777-90d5-3c5c87eb854e')"></div>
+          <p class="nav-label" style="bottom:12px;left:0;width:80px;text-align:center">Carte</p>
+        </div>
+        <div class="nav-icon-mask" style="position:absolute;left:265px;top:12px;-webkit-mask-image:url('https://www.figma.com/api/mcp/asset/6446db22-0e1c-432c-8948-e5feb9326706');mask-image:url('https://www.figma.com/api/mcp/asset/6446db22-0e1c-432c-8948-e5feb9326706')"></div>
+      </div>
+    </div>
+
+
+    <!-- ============================================================ -->
+    <!-- VILLAGE DETAIL                                                -->
+    <!-- ============================================================ -->
+    <div class="screen hidden" id="village-detail">
+      <!-- Hero image -->
+      <img src="https://www.figma.com/api/mcp/asset/ec2084e6-ede8-480f-9178-97179689d02c"
+           style="position:absolute;top:0;left:0;width:402px;height:300px;object-fit:cover;pointer-events:none">
+      <img src="https://www.figma.com/api/mcp/asset/20cac647-931e-48ad-ba5e-9da675061520"
+           style="position:absolute;top:0;left:0;width:402px;height:300px;object-fit:cover;pointer-events:none">
+
+      <!-- Back button -->
+      <button onclick="go('ideas')" style="position:absolute;top:52px;left:16px;width:36px;height:36px;background:rgba(255,255,255,0.9);border-radius:18px;font-family:'Inter',sans-serif;font-weight:700;font-size:24px;color:#2159b8;display:flex;align-items:center;justify-content:center">‹</button>
+
+      <!-- Tag -->
+      <div style="position:absolute;top:224px;left:20px;width:72px;height:26px;background:#2159b8;border-radius:13px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+        <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:11px;color:white">Guidé</p>
+      </div>
+
+      <!-- Title -->
+      <p style="position:absolute;top:254px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:700;font-size:24px;color:white;line-height:1.2">Visite guidée du<br>vieux village</p>
+
+      <!-- Stats row -->
+      <div style="position:absolute;top:318px;left:20px;width:362px;height:68px;background:#f0f5fc;border-radius:14px;overflow:hidden;display:flex;align-items:center;justify-content:space-around">
+        <div style="text-align:center">
+          <p style="font-family:'Inter',sans-serif;font-weight:700;font-size:14px;color:#2159b8">2h</p>
+          <p style="font-family:'Inter',sans-serif;font-weight:400;font-size:9px;color:#8080a6;margin-top:4px">Durée</p>
+        </div>
+        <div style="width:1px;height:40px;background:#d1def2"></div>
+        <div style="text-align:center">
+          <p style="font-family:'Inter',sans-serif;font-weight:700;font-size:14px;color:#2159b8">Med</p>
+          <p style="font-family:'Inter',sans-serif;font-weight:400;font-size:9px;color:#8080a6;margin-top:4px">Niveau</p>
+        </div>
+        <div style="width:1px;height:40px;background:#d1def2"></div>
+        <div style="text-align:center">
+          <p style="font-family:'Inter',sans-serif;font-weight:700;font-size:14px;color:#2159b8">Grat</p>
+          <p style="font-family:'Inter',sans-serif;font-weight:400;font-size:9px;color:#8080a6;margin-top:4px">Tarif</p>
+        </div>
+        <div style="width:1px;height:40px;background:#d1def2"></div>
+        <div style="text-align:center">
+          <p style="font-family:'Inter',sans-serif;font-weight:700;font-size:14px;color:#2159b8">9h30</p>
+          <p style="font-family:'Inter',sans-serif;font-weight:400;font-size:9px;color:#8080a6;margin-top:4px">Départ</p>
+        </div>
+      </div>
+
+      <!-- À propos -->
+      <p style="position:absolute;top:408px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:700;font-size:16px;color:#14141a">À propos de la visite</p>
+      <p style="position:absolute;top:436px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:400;font-size:13px;color:#595973;line-height:1.5">Partez à la découverte du vieux village médiéval de Sillans-la-Cascade avec un guide local passionné. Ruelles pavées, fontaines anciennes, église romane et panoramas sur le Var — un voyage dans l'histoire provençale garanti.</p>
+
+      <!-- Points clés -->
+      <p style="position:absolute;top:542px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:700;font-size:16px;color:#14141a">📍 Points clés du parcours</p>
+      <p style="position:absolute;top:576px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:400;font-size:12px;color:#4d4d66">🏛 Porte médiévale du XIIe s.</p>
+      <p style="position:absolute;top:600px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:400;font-size:12px;color:#4d4d66">⛲ Fontaine du XVIIIe siècle</p>
+      <p style="position:absolute;top:624px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:400;font-size:12px;color:#4d4d66">⛪ Église Saint-Martin romane</p>
+      <p style="position:absolute;top:648px;left:20px;width:362px;font-family:'Inter',sans-serif;font-weight:400;font-size:12px;color:#4d4d66">🌄 Belvédère panoramique</p>
+
+      <!-- Mission banner -->
+      <div style="position:absolute;top:686px;left:20px;width:362px;height:44px;background:#f0f5fc;border-radius:14px;display:flex;align-items:center;overflow:hidden">
+        <p style="margin-left:14px;font-family:'Inter',sans-serif;font-weight:600;font-size:11px;color:#2159b8">🏅 Mission : terminer la visite pour gagner un badge !</p>
+      </div>
+
+      <!-- CTA -->
+      <button style="position:absolute;top:748px;left:20px;width:362px;height:50px;background:#2159b8;border-radius:25px;font-family:'Inter',sans-serif;font-weight:700;font-size:15px;color:white;overflow:hidden">
+        Démarrer la visite →
+      </button>
+
+      <!-- Navbar: Plus d'idées active -->
+      <div class="navbar">
+        <div class="nav-bar-indicator" style="left:260px"></div>
+        <div onclick="go('accueil')" style="position:absolute;left:68px;top:0;width:80px;height:80px;cursor:pointer">
+          <div class="nav-icon-mask" style="position:absolute;left:4px;top:12px;-webkit-mask-image:url('https://www.figma.com/api/mcp/asset/ca5e9b43-f81c-4667-ae6e-900ea9e967e2');mask-image:url('https://www.figma.com/api/mcp/asset/ca5e9b43-f81c-4667-ae6e-900ea9e967e2')"></div>
+          <p class="nav-label" style="bottom:12px;left:0;width:80px;text-align:center">Accueil</p>
+        </div>
+        <div onclick="go('carte')" style="position:absolute;left:162px;top:0;width:80px;height:80px;cursor:pointer">
+          <div class="nav-icon-mask" style="position:absolute;left:17px;top:12px;-webkit-mask-image:url('https://www.figma.com/api/mcp/asset/42f1604e-59c4-4777-90d5-3c5c87eb854e');mask-image:url('https://www.figma.com/api/mcp/asset/42f1604e-59c4-4777-90d5-3c5c87eb854e')"></div>
+          <p class="nav-label" style="bottom:12px;left:0;width:80px;text-align:center">Carte</p>
+        </div>
+        <div class="nav-icon-mask" style="position:absolute;left:265px;top:12px;-webkit-mask-image:url('https://www.figma.com/api/mcp/asset/6446db22-0e1c-432c-8948-e5feb9326706');mask-image:url('https://www.figma.com/api/mcp/asset/6446db22-0e1c-432c-8948-e5feb9326706')"></div>
+      </div>
+    </div>
+
+
+    <!-- ============================================================ -->
+    <!-- MES BADGES                                                    -->
+    <!-- ============================================================ -->
+    <div class="screen hidden" id="badges">
+      <!-- White header -->
+      <div style="position:absolute;top:0;left:0;width:402px;height:110px;background:white"></div>
+
+      <p style="position:absolute;top:60px;left:20px;width:250px;font-family:'Inter',sans-serif;font-weight:700;font-size:26px;color:#14141a">Mes badges</p>
+
+      <!-- Counter badge -->
+      <div style="position:absolute;top:56px;left:262px;width:120px;height:38px;background:#f0f5fc;border-radius:19px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+        <p style="font-family:'Inter',sans-serif;font-weight:600;font-size:11px;color:#2159b8">3 / 8 badges</p>
+      </div>
+
+      <!-- Progress bar -->
+      <div style="position:absolute;top:108px;left:20px;width:362px;height:8px;background:#c2d9f2;border-radius:4px">
+        <div style="width:136px;height:8px;background:#2159b8;border-radius:4px"></div>
+      </div>
+      <p style="position:absolute;top:120px;left:20px;font-family:'Inter',sans-serif;font-weight:400;font-size:10px;color:#8080a6">37% complété</p>
+
+      <!-- Background -->
+      <div style="position:absolute;top:110px;left:0;width:402px;height:674px;background:#f7faff"></div>
+
+      <!-- Unlocked badges heading -->
+      <p style="position:absolute;top:148px;left:20px;width:340px;font-family:'Inter',sans-serif;font-weight:700;font-size:16px;color:#14141a">🏅 Badges débloqués</p>
+
+      <!-- Badge: Plongeur -->
+      <div style="position:absolute;top:180px;left:20px;width:108px;height:128px;background:white;border-radius:18px;box-shadow:0 4px 16px rgba(0,26,77,0.08);overflow:hidden">
+        <img src="https://www.figma.com/api/mcp/asset/86c2abd9-db9e-4c1e-b630-87415e5f3b3a" style="position:absolute;top:14px;left:26px;width:56px;height:56px">
+        <span style="position:absolute;top:20px;left:50%;transform:translateX(-50%);font-size:26px">🌊</span>
+        <p style="position:absolute;top:78px;left:50%;transform:translateX(-50%);width:96px;font-family:'Inter',sans-serif;font-weight:700;font-size:11px;color:#14141a;text-align:center;white-space:nowrap">Plongeur</p>
+        <p style="position:absolute;top:96px;left:50%;transform:translateX(-50%);width:100px;font-family:'Inter',sans-serif;font-weight:400;font-size:9px;color:#8080a6;text-align:center;white-space:nowrap">Bassin visité</p>
+        <img src="https://www.figma.com/api/mcp/asset/54b14e8a-2fb3-43f5-bfa4-85a1df74cacc" style="position:absolute;top:8px;left:76px;width:18px;height:18px">
+        <p style="position:absolute;top:4px;left:76px;width:18px;font-family:'Inter',sans-serif;font-weight:700;font-size:10px;color:white;text-align:center">✓</p>
+      </div>
+
+      <!-- Badge: Photographe -->
+      <div style="position:absolute;top:180px;left:144px;width:108px;height:128px;background:white;border-radius:18px;box-shadow:0 4px 16px rgba(0,26,77,0.08);overflow:hidden">
+        <img src="https://www.figma.com/api/mcp/asset/a1138621-9c7d-4252-8947-32afaefc43a8" style="position:absolute;top:14px;left:26px;width:56px;height:56px">
+        <span style="position:absolute;top:20px;left:50%;transform:translateX(-50%);font-size:26px">📸</span>
+        <p style="position:absolute;top:78px;left:50%;transform:translateX(-50%);width:96px;font-family:'Inter',sans-serif;font-weight:700;font-size:11px;color:#14141a;text-align:center;white-space:nowrap">Photographe</p>
+        <p style="position:absolute;top:96px;left:50%;transform:translateX(-50%);width:100px;font-family:'Inter',sans-serif;font-weight:400;font-size:9px;color:#8080a6;text-align:center;white-space:nowrap">Photo à la cascade</p>
+        <img src="https://www.figma.com/api/mcp/asset/54b14e8a-2fb3-43f5-bfa4-85a1df74cacc" style="position:absolute;top:8px;left:76px;width:18px;height:18px">
+        <p style="position:absolute;top:4px;left:76px;width:18px;font-family:'Inter',sans-serif;font-weight:700;font-size:10px;color:white;text-align:center">✓</p>
+      </div>
+
+      <!-- Badge: Lève-tôt -->
+      <div style="position:absolute;top:180px;left:268px;width:108px;height:128px;background:white;border-radius:18px;box-shadow:0 4px 16px rgba(0,26,77,0.08);overflow:hidden">
+        <img src="https://www.figma.com/api/mcp/asset/a81b7b45-1359-428f-9145-c8aae888c96a" style="position:absolute;top:14px;left:26px;width:56px;height:56px">
+        <span style="position:absolute;top:20px;left:50%;transform:translateX(-50%);font-size:26px">🌅</span>
+        <p style="position:absolute;top:78px;left:50%;transform:translateX(-50%);width:96px;font-family:'Inter',sans-serif;font-weight:700;font-size:11px;color:#14141a;text-align:center;white-space:nowrap">Lève-tôt</p>
+        <p style="position:absolute;top:96px;left:50%;transform:translateX(-50%);width:100px;font-family:'Inter',sans-serif;font-weight:400;font-size:9px;color:#8080a6;text-align:center;white-space:nowrap">Belvédère au lever</p>
+        <img src="https://www.figma.com/api/mcp/asset/54b14e8a-2fb3-43f5-bfa4-85a1df74cacc" style="position:absolute;top:8px;left:76px;width:18px;height:18px">
+        <p style="position:absolute;top:4px;left:76px;width:18px;font-family:'Inter',sans-serif;font-weight:700;font-size:10px;color:white;text-align:center">✓</p>
+      </div>
+
+      <!-- Locked badges heading -->
+      <p style="position:absolute;top:334px;left:20px;width:340px;font-family:'Inter',sans-serif;font-weight:700;font-size:16px;color:#14141a">🔒 Badges à débloquer</p>
+
+      <!-- Locked badge rows -->
+      <!-- Historien -->
+      <div style="position:absolute;top:368px;left:20px;width:362px;height:66px;background:white;border-radius:16px;box-shadow:0 3px 12px rgba(0,0,26,0.05);overflow:hidden">
+        <img src="https://www.figma.com/api/mcp/asset/7175c563-dc15-44c8-8148-97d21e0357ee" style="position:absolute;top:11px;left:11px;width:44px;height:44px">
+        <span style="position:absolute;top:16px;left:11px;width:44px;font-size:20px;text-align:center;opacity:0.35">⚙️</span>
+        <span style="position:absolute;top:28px;left:28px;font-size:12px">🔒</span>
+        <p style="position:absolute;top:10px;left:68px;width:220px;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;color:#4d4d66">Historien</p>
+        <p style="position:absolute;top:30px;left:68px;width:220px;font-family:'Inter',sans-serif;font-weight:400;font-size:10px;color:#8c8ca6">Mission : Découverte du moulin</p>
+        <div style="position:absolute;top:50px;left:68px;width:200px;height:4px;background:#c2d9f2;border-radius:2px"></div>
+        <p style="position:absolute;top:20px;left:336px;font-family:'Inter',sans-serif;font-weight:700;font-size:20px;color:#c2d9f2">›</p>
+      </div>
+
+      <!-- Locavore -->
+      <div style="position:absolute;top:444px;left:20px;width:362px;height:66px;background:white;border-radius:16px;box-shadow:0 3px 12px rgba(0,0,26,0.05);overflow:hidden">
+        <img src="https://www.figma.com/api/mcp/asset/7175c563-dc15-44c8-8148-97d21e0357ee" style="position:absolute;top:11px;left:11px;width:44px;height:44px">
+        <span style="position:absolute;top:16px;left:11px;width:44px;font-size:20px;text-align:center;opacity:0.35">🏘️</span>
+        <span style="position:absolute;top:28px;left:28px;font-size:12px">🔒</span>
+        <p style="position:absolute;top:10px;left:68px;width:220px;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;color:#4d4d66">Locavore</p>
+        <p style="position:absolute;top:30px;left:68px;width:220px;font-family:'Inter',sans-serif;font-weight:400;font-size:10px;color:#8c8ca6">Mission : Tour du village guidé</p>
+        <div style="position:absolute;top:50px;left:68px;width:200px;height:4px;background:#c2d9f2;border-radius:2px"></div>
+        <p style="position:absolute;top:20px;left:336px;font-family:'Inter',sans-serif;font-weight:700;font-size:20px;color:#c2d9f2">›</p>
+      </div>
+
+      <!-- Explorateur -->
+      <div style="position:absolute;top:520px;left:20px;width:362px;height:66px;background:white;border-radius:16px;box-shadow:0 3px 12px rgba(0,0,26,0.05);overflow:hidden">
+        <img src="https://www.figma.com/api/mcp/asset/7175c563-dc15-44c8-8148-97d21e0357ee" style="position:absolute;top:11px;left:11px;width:44px;height:44px">
+        <span style="position:absolute;top:16px;left:11px;width:44px;font-size:20px;text-align:center;opacity:0.35">🗺️</span>
+        <span style="position:absolute;top:28px;left:28px;font-size:12px">🔒</span>
+        <p style="position:absolute;top:10px;left:68px;width:220px;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;color:#4d4d66">Explorateur</p>
+        <p style="position:absolute;top:30px;left:68px;width:220px;font-family:'Inter',sans-serif;font-weight:400;font-size:10px;color:#8c8ca6">Mission : Compléter la carte</p>
+        <div style="position:absolute;top:50px;left:68px;width:200px;height:4px;background:#c2d9f2;border-radius:2px">
+          <div style="width:100px;height:4px;background:#2159b8;border-radius:2px"></div>
+        </div>
+        <p style="position:absolute;top:20px;left:336px;font-family:'Inter',sans-serif;font-weight:700;font-size:20px;color:#c2d9f2">›</p>
+      </div>
+
+      <!-- Naturaliste -->
+      <div style="position:absolute;top:596px;left:20px;width:362px;height:66px;background:white;border-radius:16px;box-shadow:0 3px 12px rgba(0,0,26,0.05);overflow:hidden">
+        <img src="https://www.figma.com/api/mcp/asset/7175c563-dc15-44c8-8148-97d21e0357ee" style="position:absolute;top:11px;left:11px;width:44px;height:44px">
+        <span style="position:absolute;top:16px;left:11px;width:44px;font-size:20px;text-align:center;opacity:0.35">🌿</span>
+        <span style="position:absolute;top:28px;left:28px;font-size:12px">🔒</span>
+        <p style="position:absolute;top:10px;left:68px;width:220px;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;color:#4d4d66">Naturaliste</p>
+        <p style="position:absolute;top:30px;left:68px;width:220px;font-family:'Inter',sans-serif;font-weight:400;font-size:10px;color:#8c8ca6">Mission : Balade des lavoirs</p>
+        <div style="position:absolute;top:50px;left:68px;width:200px;height:4px;background:#c2d9f2;border-radius:2px"></div>
+        <p style="position:absolute;top:20px;left:336px;font-family:'Inter',sans-serif;font-weight:700;font-size:20px;color:#c2d9f2">›</p>
+      </div>
+
+      <!-- Ambassadeur -->
+      <div style="position:absolute;top:672px;left:20px;width:362px;height:66px;background:white;border-radius:16px;box-shadow:0 3px 12px rgba(0,0,26,0.05);overflow:hidden">
+        <img src="https://www.figma.com/api/mcp/asset/7175c563-dc15-44c8-8148-97d21e0357ee" style="position:absolute;top:11px;left:11px;width:44px;height:44px">
+        <span style="position:absolute;top:16px;left:11px;width:44px;font-size:20px;text-align:center;opacity:0.35">⭐</span>
+        <span style="position:absolute;top:28px;left:28px;font-size:12px">🔒</span>
+        <p style="position:absolute;top:10px;left:68px;width:220px;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;color:#4d4d66">Ambassadeur</p>
+        <p style="position:absolute;top:30px;left:68px;width:220px;font-family:'Inter',sans-serif;font-weight:400;font-size:10px;color:#8c8ca6">Mission : Inviter un ami</p>
+        <div style="position:absolute;top:50px;left:68px;width:200px;height:4px;background:#c2d9f2;border-radius:2px"></div>
+        <p style="position:absolute;top:20px;left:336px;font-family:'Inter',sans-serif;font-weight:700;font-size:20px;color:#c2d9f2">›</p>
+      </div>
+
+      <!-- Navbar: Accueil active -->
+      <div class="navbar">
+        <div class="nav-bar-indicator" style="left:83px"></div>
+        <div class="nav-icon-mask" style="position:absolute;left:88px;top:12px;-webkit-mask-image:url('https://www.figma.com/api/mcp/asset/ca5e9b43-f81c-4667-ae6e-900ea9e967e2');mask-image:url('https://www.figma.com/api/mcp/asset/ca5e9b43-f81c-4667-ae6e-900ea9e967e2')"></div>
+        <div onclick="go('carte')" style="position:absolute;left:162px;top:0;width:80px;height:80px;cursor:pointer">
+          <div class="nav-icon-mask" style="position:absolute;left:17px;top:12px;-webkit-mask-image:url('https://www.figma.com/api/mcp/asset/42f1604e-59c4-4777-90d5-3c5c87eb854e');mask-image:url('https://www.figma.com/api/mcp/asset/42f1604e-59c4-4777-90d5-3c5c87eb854e')"></div>
+          <p class="nav-label" style="bottom:12px;left:0;width:80px;text-align:center">Carte</p>
+        </div>
+        <div onclick="go('ideas')" style="position:absolute;left:240px;top:0;width:120px;height:80px;cursor:pointer">
+          <div class="nav-icon-mask" style="position:absolute;left:27px;top:12px;-webkit-mask-image:url('https://www.figma.com/api/mcp/asset/6446db22-0e1c-432c-8948-e5feb9326706');mask-image:url('https://www.figma.com/api/mcp/asset/6446db22-0e1c-432c-8948-e5feb9326706')"></div>
+          <p class="nav-label" style="bottom:12px;left:0;width:120px;text-align:center">Plus d'idées</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /app -->
+</div><!-- /appWrapper -->
+
+<script>
+  function go(id) {
+    document.querySelectorAll('.screen').forEach(s => {
+      s.classList.add('hidden');
+      s.classList.remove('screen-enter');
+    });
+    const next = document.getElementById(id);
+    next.classList.remove('hidden');
+    void next.offsetWidth;
+    next.classList.add('screen-enter');
+  }
+
+  function scaleApp() {
+    const wrapper = document.getElementById('appWrapper');
+    const app = document.getElementById('app');
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const scaleX = vw / 402;
+    const scaleY = vh / 874;
+    const scale = Math.min(scaleX, scaleY);
+    const scaledW = Math.round(402 * scale);
+    const scaledH = Math.round(874 * scale);
+    app.style.transform = 'scale(' + scale + ')';
+    app.style.transformOrigin = 'top left';
+    wrapper.style.width = scaledW + 'px';
+    wrapper.style.height = scaledH + 'px';
+    document.body.style.alignItems = scaledH < vh ? 'center' : 'flex-start';
+    document.body.style.justifyContent = 'center';
+  }
+
+  window.addEventListener('resize', scaleApp);
+  scaleApp();
+  go('splash');
+</script>
+</body>
+</html>
